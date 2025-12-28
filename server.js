@@ -138,6 +138,7 @@ function persistCalls() {
 function loadCallsFromDisk() {
   try {
     ensureDataDir();
+    if (!fs.existsSync(callsFile)) return;
     const raw = fs.readFileSync(callsFile, 'utf-8');
     const parsed = JSON.parse(raw);
     const items = Array.isArray(parsed?.calls) ? parsed.calls : [];
@@ -204,6 +205,22 @@ app.use(cors());
 app.use(express.json({ limit: '1000mb' }));
 app.use(express.urlencoded({ limit: '1000mb', extended: true }));
 app.use(cookieParser());
+
+// --- ROTAS PRIORITÁRIAS ---
+app.get('/video/:callId', (req, res) => {
+  const p = path.join(__dirname, 'public', 'video.html');
+  if (fs.existsSync(p)) res.sendFile(p);
+  else res.status(404).send('Página de vídeo não encontrada no servidor');
+});
+
+app.get('/call/:callId', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'call.html'));
+});
+
+app.get('/host/:callId', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'host.html'));
+});
+
 app.use(express.static('public', { index: false }));
 app.use('/uploads', express.static('public/uploads'));
 
@@ -241,7 +258,9 @@ app.post('/api/auth/register', (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: 'usuário e senha obrigatórios' });
   const store = readJson(usersFile, { users: [] });
-  if (store.users.some(u => u.username.toLowerCase() === username.toLowerCase())) return res.status(409).json({ error: 'Usuário já existe' });
+  if (store.users.some(u => (u.username || u.email || '').toLowerCase() === username.toLowerCase())) {
+    return res.status(409).json({ error: 'Usuário já existe' });
+  }
   const userId = uuidv4();
   store.users.push({ userId, username, passwordHash: bcrypt.hashSync(password, 10), createdAt: new Date().toISOString() });
   writeJson(usersFile, store);
@@ -251,11 +270,12 @@ app.post('/api/auth/register', (req, res) => {
 
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body || {};
+  if (!username || !password) return res.status(400).json({ error: 'usuário e senha obrigatórios' });
   const store = readJson(usersFile, { users: [] });
-  const user = store.users.find(u => u.username.toLowerCase() === username.toLowerCase());
+  const user = store.users.find(u => (u.username || u.email || '').toLowerCase() === username.toLowerCase());
   if (!user || !bcrypt.compareSync(password, user.passwordHash)) return res.status(401).json({ error: 'Credenciais inválidas' });
   setSession(res, user.userId);
-  res.json({ ok: true, userId: user.userId, username: user.username });
+  res.json({ ok: true, userId: user.userId, username: user.username || user.email });
 });
 
 app.get('/api/auth/me', (req, res) => {
@@ -265,7 +285,7 @@ app.get('/api/auth/me', (req, res) => {
   const store = readJson(usersFile, { users: [] });
   const user = store.users.find(u => u.userId === s.userId);
   if (!user) return res.status(401).json({ error: 'Usuário não encontrado' });
-  res.json({ ok: true, userId: user.userId, username: user.username });
+  res.json({ ok: true, userId: user.userId, username: user.username || user.email });
 });
 
 // API Calls
@@ -301,22 +321,14 @@ app.get('/api/call/:callId', (req, res) => {
   const call = calls.get(req.params.callId);
   if (!call) return res.status(404).json({ error: 'Call não encontrada' });
   if (isExpired(call)) return res.status(410).json({ error: 'Expirada' });
-  res.json({ ...call, guestsCount: call.guests.size });
-});
-
-// --- ROTAS DE PÁGINAS HTML (Express) ---
-app.get('/video/:callId', (req, res) => {
-  const p = path.join(__dirname, 'public', 'video.html');
-  if (fs.existsSync(p)) res.sendFile(p);
-  else res.status(404).send('Página não encontrada');
-});
-
-app.get('/call/:callId', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'call.html'));
-});
-
-app.get('/host/:callId', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'host.html'));
+  res.json({
+    callId: req.params.callId,
+    title: call.title,
+    videoUrl: call.videoUrl,
+    callerName: call.callerName,
+    callerAvatarUrl: call.callerAvatarUrl,
+    guestsCount: call.guests.size
+  });
 });
 
 // API History/Sales
