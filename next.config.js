@@ -4,10 +4,10 @@ const nextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: path.join(__dirname),
   env: {
-    36|    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '',
-    37|    NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || '',
-    38|    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || '',
-    39|  },
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '',
+    NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || '',
+    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || '',
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -17,5 +17,3 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
-
-
