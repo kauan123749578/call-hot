@@ -15,6 +15,7 @@ function RegisterForm() {
 
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [inviteCode, setInviteCode] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -27,7 +28,7 @@ function RegisterForm() {
       const resp = await apiFetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password, inviteCode })
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data?.error || "Erro ao criar conta");
@@ -50,6 +51,7 @@ function RegisterForm() {
           type="text"
           className="h-12 border-neutral-800 bg-black text-white placeholder:text-gray-600 focus:border-[#d61f1f] transition-all"
           disabled={loading}
+          required
         />
       </div>
 
@@ -63,6 +65,7 @@ function RegisterForm() {
             placeholder="Mínimo 3 caracteres"
             className="h-12 border-neutral-800 bg-black pr-12 text-white placeholder:text-gray-600 focus:border-[#d61f1f] transition-all"
             disabled={loading}
+            required
           />
           <button
             type="button"
@@ -73,6 +76,19 @@ function RegisterForm() {
             {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
           </button>
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-red-500">Código de Convite (Obrigatório)</label>
+        <Input
+          value={inviteCode}
+          onChange={(e) => setInviteCode(e.target.value)}
+          placeholder="Código VIP para acesso"
+          type="text"
+          className="h-12 border-red-900/30 bg-black text-white placeholder:text-gray-600 focus:border-red-600 transition-all"
+          disabled={loading}
+          required
+        />
       </div>
 
       {error ? (
