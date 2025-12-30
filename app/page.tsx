@@ -202,14 +202,17 @@ export default function DashboardPage() {
       if (!resp.ok) throw new Error(data?.error || "Erro ao criar call");
 
       const link = `${window.location.origin}${data.ringUrl}`;
-      await navigator.clipboard.writeText(link);
+      // REMOVIDO: navigator.clipboard.writeText(link); 
+      // Em mobile, o clipboard.writeText falha se houver um await antes.
+      // O usuário usará o botão "Copiar" no modal que abre agora.
+
       setCreatedLink(link);
       if (data?.sale?.amount) {
         setCreatedCallAmount(Number(data.sale.amount));
-        showToast("Link copiado! Venda registrada.");
+        showToast("Link gerado! Veja abaixo.");
       } else {
         setCreatedCallAmount(null);
-        showToast("Link copiado para área de transferência");
+        showToast("Link gerado com sucesso!");
       }
 
       setTitle("");
